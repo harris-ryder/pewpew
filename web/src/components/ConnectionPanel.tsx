@@ -6,14 +6,14 @@ export function ConnectionPanel() {
   const { connect, disconnect } = useSerial()
 
   return (
-    <div className="bg-surface-primary rounded-2xl p-4 mb-[-1px]">
+    <div className="relative z-10 bg-surface-primary rounded-2xl p-4 mb-[-1px] ring-1 ring-black">
       <div className="flex items-center justify-between mb-4">
         <span className="text-caption text-text-tertiary tracking-widest uppercase">Connection</span>
         <span className={`w-1.5 h-1.5 rounded-full transition-colors ${connected ? 'bg-brand-green' : 'bg-neutral-300'}`} />
       </div>
 
       {!SERIAL_SUPPORTED && (
-        <p className="text-caption text-brand-yellow mb-2">
+        <p className="text-caption text-text-secondary mb-2">
           Web Serial not supported — use Chrome or Edge.
         </p>
       )}
@@ -29,7 +29,7 @@ export function ConnectionPanel() {
         className={`w-full px-3 py-1.5 rounded-full text-caption font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
           connected
             ? 'border border-border-default text-text-secondary hover:bg-surface-tertiary'
-            : 'bg-brand-yellow text-neutral-900 hover:opacity-90'
+            : 'bg-text-primary text-surface-primary hover:opacity-90'
         }`}
         onClick={connected ? disconnect : connect}
         disabled={!SERIAL_SUPPORTED}

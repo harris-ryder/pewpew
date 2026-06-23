@@ -19,7 +19,7 @@ export function StatusPanel() {
   const aimY = stepsToCanvasY(posY, canvasSettings.distanceMm).toFixed(0)
 
   return (
-    <div className="bg-surface-primary rounded-2xl p-4">
+    <div className="relative z-10 bg-surface-primary rounded-2xl p-4 ring-1 ring-black">
       <span className="text-caption text-text-tertiary tracking-widest uppercase block mb-4">Status</span>
 
       <div className="flex flex-col">
@@ -33,7 +33,7 @@ export function StatusPanel() {
 
         <div className="flex items-center justify-between py-1.5">
           <span className="text-caption text-text-tertiary uppercase">Limit SW</span>
-          <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium ${limitSwitch ? 'bg-brand-yellow/15 text-brand-yellow' : 'bg-surface-tertiary text-text-tertiary'}`}>
+          <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium ${limitSwitch ? 'bg-surface-tertiary text-text-secondary' : 'bg-surface-tertiary text-text-tertiary'}`}>
             {limitSwitch ? 'TRIGGERED' : 'CLEAR'}
           </span>
         </div>

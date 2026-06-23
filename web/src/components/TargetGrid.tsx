@@ -62,8 +62,8 @@ export function TargetGrid() {
       label:        isDark ? '#484848' : '#929292',
       border:       isDark ? '#484848' : '#c8c8c8',
       hit:          isDark ? '#606060' : '#929292',
-      crosshair:    '#d71921',
-      crosshairDim: isDark ? '#d7192150' : '#d7192140',
+      crosshair:    isDark ? '#929292' : '#606060',
+      crosshairDim: isDark ? '#92929250' : '#60606040',
     }
 
     // Data area sits inside margins: left=ML, top=MT, right=W, bottom=H-MB
@@ -92,7 +92,7 @@ export function TargetGrid() {
 
     // X-axis labels — below the data area
     ctx.fillStyle = col.label
-    ctx.font = '9px monospace'
+    ctx.font = '9px "Geist Mono", monospace'
     ctx.textAlign = 'center'
     for (let i = 0; i <= GRID_DIVS; i++) {
       ctx.fillText(
@@ -139,7 +139,7 @@ export function TargetGrid() {
       ctx.beginPath(); ctx.moveTo(px, py + 7);  ctx.lineTo(px, py + 20); ctx.stroke()
 
       ctx.fillStyle = col.crosshair
-      ctx.font = '9px monospace'
+      ctx.font = '9px "Geist Mono", monospace'
       ctx.textAlign = 'left'
       ctx.fillText(`${Math.round(target.x)}, ${Math.round(target.y)}`, px + 8, py - 8)
     }
@@ -212,9 +212,9 @@ export function TargetGrid() {
   const inputCls = 'w-14 bg-transparent border border-border-default rounded-full px-1.5 py-0.5 text-caption font-mono text-text-primary text-center focus:outline-none focus:border-border-darker transition-colors'
 
   return (
-    <div className="rounded-[24px] bg-surface-on-primary p-3 flex flex-col">
+    <div className="rounded-[24px] hatch-bg p-3 flex flex-col">
       {/* Settings */}
-      <div className="bg-surface-primary rounded-2xl p-4 shrink-0 mb-[-1px]">
+      <div className="relative z-10 bg-surface-primary rounded-2xl p-4 shrink-0 mb-[-1px] ring-1 ring-black">
         <div className="flex items-center justify-between mb-4">
           <span className="text-caption text-text-tertiary tracking-widest uppercase">Target Grid</span>
           <span className="text-caption text-text-tertiary">{hits.length} hits</span>
@@ -241,7 +241,7 @@ export function TargetGrid() {
       {/* Canvas */}
       <div
         ref={containerRef}
-        className="bg-surface-primary rounded-2xl mb-[-1px] flex items-center justify-center p-3 w-full"
+        className="relative z-10 bg-surface-primary rounded-2xl mb-[-1px] flex items-center justify-center p-3 w-full ring-1 ring-black"
         style={{ aspectRatio: `${canvasSettings.widthMm} / ${canvasSettings.heightMm}` }}
       >
         <canvas ref={canvasRef} onClick={handleClick} style={{ cursor: 'crosshair' }} />
@@ -250,7 +250,7 @@ export function TargetGrid() {
       <Stitching />
 
       {/* Controls */}
-      <div className="bg-surface-primary rounded-2xl p-4 shrink-0">
+      <div className="relative z-10 bg-surface-primary rounded-2xl p-4 shrink-0 ring-1 ring-black">
         <div className="text-caption font-mono text-text-tertiary mb-4">
           {target ? (
             <>
@@ -271,7 +271,7 @@ export function TargetGrid() {
             Aim
           </button>
           <button
-            className="flex-1 px-2 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-1000 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            className="flex-1 px-2 py-1.5 rounded-full text-caption font-medium bg-text-primary text-surface-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             disabled={!connected || !target}
             onClick={aimFire}
           >

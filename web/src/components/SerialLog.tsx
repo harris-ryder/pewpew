@@ -36,7 +36,7 @@ export function SerialLog() {
                 <span
                   key={i}
                   className={`text-caption font-mono leading-5 ${
-                    line.startsWith('←') ? 'text-brand-green' :
+                    line.startsWith('←') ? 'text-text-secondary' :
                     line.startsWith('→') ? 'text-neutral-400' :
                     'text-text-tertiary'
                   }`}

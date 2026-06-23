@@ -56,7 +56,7 @@ export function App() {
 
         <div className="flex-1 flex overflow-hidden min-h-0">
           <aside className="pointer-events-auto w-72 shrink-0 flex flex-col p-2 overflow-y-auto">
-            <div className="flex flex-col rounded-[24px] bg-surface-on-primary p-3">
+            <div className="flex flex-col rounded-[24px] hatch-bg p-3">
               <ConnectionPanel />
               <Stitching />
               <CalibrationPanel />

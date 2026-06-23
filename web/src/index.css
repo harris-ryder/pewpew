@@ -122,9 +122,7 @@ body {
   --color-border-lighter: var(--border-lighter);
   --color-border-darker: var(--border-darker);
 
-  --font-ntype: 'JetBrains Mono', ui-monospace, 'Roboto Mono', SFMono-Regular, monospace;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'Roboto Mono', SFMono-Regular, monospace;
-  --font-ndot: 'JetBrains Mono', ui-monospace, 'Roboto Mono', SFMono-Regular, monospace;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
 
   --font-size-xxs: 0.625rem;
   --font-size-xs: 0.75rem;
@@ -160,7 +158,7 @@ input[type='number']::-webkit-inner-spin-button {
 
 @layer components {
   .text-heading-1 {
-    font-family: var(--font-ntype);
+    font-family: var(--font-mono);
     font-size: var(--font-size-3xl);
     line-height: var(--lh-dense);
     font-weight: var(--font-weight-normal);
@@ -168,7 +166,7 @@ input[type='number']::-webkit-inner-spin-button {
   }
 
   .text-heading-2 {
-    font-family: var(--font-ntype);
+    font-family: var(--font-mono);
     font-size: var(--font-size-2xl);
     line-height: var(--lh-dense);
     font-weight: var(--font-weight-normal);
@@ -176,7 +174,7 @@ input[type='number']::-webkit-inner-spin-button {
   }
 
   .text-heading-3 {
-    font-family: var(--font-ntype);
+    font-family: var(--font-mono);
     font-size: var(--font-size-xl);
     line-height: var(--lh-dense);
     font-weight: var(--font-weight-normal);
@@ -184,7 +182,7 @@ input[type='number']::-webkit-inner-spin-button {
   }
 
   .text-heading-4 {
-    font-family: var(--font-ntype);
+    font-family: var(--font-mono);
     font-size: var(--font-size-l);
     line-height: var(--lh-dense);
     font-weight: var(--font-weight-normal);
@@ -221,6 +219,29 @@ input[type='number']::-webkit-inner-spin-button {
     line-height: var(--lh-loose);
     font-weight: var(--font-weight-normal);
     letter-spacing: var(--ls-loose);
+  }
+
+  .hatch-bg {
+    background-color: var(--surface-on-primary);
+    background-image: repeating-linear-gradient(
+      -45deg,
+      #000 0,
+      #000 1px,
+      transparent 1px,
+      transparent 5px
+    );
+    outline: 1px solid #000;
+  }
+
+  .dark .hatch-bg {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      #000 0,
+      #000 1px,
+      transparent 1px,
+      transparent 5px
+    );
+    outline: 1px solid #000;
   }
 
   .dotted-background {

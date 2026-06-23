@@ -179,7 +179,7 @@ function CanvasPlane() {
         return (
           <mesh position={[lx, ly, -distM + 0.01]}>
             <sphereGeometry args={[0.02, 8, 8]} />
-            <meshStandardMaterial color="#d71921" emissive="#d71921" emissiveIntensity={0.6} />
+            <meshStandardMaterial color="#777777" />
           </mesh>
         )
       })()}
@@ -204,7 +204,7 @@ function AimLine({ aimRef }: { aimRef: AimRef }) {
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3))
     const mat = new THREE.LineDashedMaterial({
-      color: new THREE.Color('#d71921'),
+      color: new THREE.Color('#777777'),
       dashSize: 0.08, gapSize: 0.04,
       opacity: 0.7, transparent: true,
     })
@@ -288,7 +288,7 @@ function Scene() {
       <TransparentBackground />
       <ambientLight    intensity={theme === 'light' ? 0.6 : 0.3} />
       <directionalLight position={[3, 5, 4]} intensity={theme === 'light' ? 1.2 : 0.9} />
-      <pointLight position={[0, GUN_HEIGHT, -0.5]} intensity={0.4} color="#0088ff" />
+      <pointLight position={[0, GUN_HEIGHT, -0.5]} intensity={0.4} />
 
       {/* Ghost gun — shows where aim will go on next Aim click */}
       <GunModel targetPan={ghostPan} targetTilt={ghostTilt} aimRef={ghostAimRef} ghost />

@@ -22,7 +22,7 @@ export function CalibrationPanel() {
   const dis = !connected
 
   return (
-    <div className="bg-surface-primary rounded-2xl p-4 mb-[-1px]">
+    <div className="relative z-10 bg-surface-primary rounded-2xl p-4 mb-[-1px] ring-1 ring-black">
       <div className="flex items-center justify-between mb-4">
         <span className="text-caption text-text-tertiary tracking-widest uppercase">Calibration</span>
         <span className={`w-1.5 h-1.5 rounded-full transition-colors ${connected && calibration.yHomed && calibration.xCalibrated && calibration.triggerCalibrated ? 'bg-brand-green' : 'bg-neutral-300'}`} />
@@ -57,7 +57,7 @@ export function CalibrationPanel() {
           </p>
           <div className="flex items-center justify-between">
             <span className="text-caption text-text-tertiary uppercase">Limit SW</span>
-            <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium ${limitSwitch ? 'bg-brand-yellow/15 text-brand-yellow' : 'bg-surface-tertiary text-text-tertiary'}`}>
+            <span className={`text-caption px-1.5 py-0.5 rounded-full font-medium ${limitSwitch ? 'bg-surface-tertiary text-text-secondary' : 'bg-surface-tertiary text-text-tertiary'}`}>
               {limitSwitch ? 'TRIGGERED' : 'CLEAR'}
             </span>
           </div>
@@ -66,7 +66,7 @@ export function CalibrationPanel() {
             <span className="text-caption font-mono text-text-primary">{posY} steps</span>
           </div>
           <button
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-900 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-text-primary text-surface-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             disabled={dis}
             onClick={() => send('HOME_Y')}
           >
@@ -245,7 +245,7 @@ export function CalibrationPanel() {
           </div>
 
           <button
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-1000 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-text-primary text-surface-primary hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             disabled={dis || !calibration.triggerCalibrated}
             onClick={() => send('FIRE')}
           >
