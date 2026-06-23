@@ -42,7 +42,7 @@ void setup() {
   int t = 500;
   bool fire = true;
   Serial.begin(9600);
-  pinMode(limitY, INPUT);  //Set limit switch
+  pinMode(limitY, INPUT_PULLUP);  //Set limit switch
 
   stepperY.setMaxSpeed(1000);
   stepperY.setAcceleration(1600);
@@ -52,10 +52,6 @@ void setup() {
   stepperT.setAcceleration(600);
 
   
-
-  while (digitalRead(limitY)) { 
-
-    }
 
 homeY();
 delay(100);
@@ -131,21 +127,26 @@ void loop() {
 
 
 void homeY() {
+  Serial.print("limitY pin reading: ");
+  Serial.println(digitalRead(limitY));
 
   stepperY.setCurrentPosition(0);
-  stepperY.moveTo(-50);
+  stepperY.moveTo(50);
   stepperY.runToPosition();
+  Serial.println("Moved +50, now homing...");
 
-  while (digitalRead(limitY)) {  // Make the Stepper move CCW until the switch is activated
-    stepperY.moveTo(-10);        // Set the position to move to
-    stepperY.run();       // Start moving the stepper
+  while (digitalRead(limitY)) {
+    stepperY.moveTo(10);
+    stepperY.run();
     stepperY.setCurrentPosition(0);
     delay(1);
   }
 
-  stepperY.moveTo(yHomeSteps);  // Set the current position as zero for now
+  Serial.println("Limit switch hit, moving to home offset...");
+  stepperY.moveTo(yHomeSteps);
   stepperY.runToPosition();
-  stepperY.setCurrentPosition(0);  // Set the current position as zero for now
+  stepperY.setCurrentPosition(0);
+  Serial.println("homeY done");
 }
 
 void homeTrigger() {

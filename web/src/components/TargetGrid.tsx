@@ -1,0 +1,280 @@
+import { useRef, useEffect, useCallback, useState } from 'react'
+import { useGunStore } from '../store/gunStore'
+import { useSerial } from '../hooks/useSerial'
+import { canvasXToSteps, canvasYToSteps } from '../utils/math'
+import { Stitching } from './Stitching'
+
+const GRID_DIVS = 9
+const ML = 30   // left margin — Y-axis labels
+const MB = 14   // bottom margin — X-axis labels
+
+export function TargetGrid() {
+  const canvasRef    = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const { target, hits, canvasSettings, connected, addHit, clearHits, setTarget, updateCanvasSettings, theme } = useGunStore()
+  const { send } = useSerial()
+
+  const [wInput, setWInput] = useState(String(canvasSettings.widthMm))
+  const [hInput, setHInput] = useState(String(canvasSettings.heightMm))
+  const [dInput, setDInput] = useState(String(canvasSettings.distanceMm))
+
+  useEffect(() => { setWInput(String(canvasSettings.widthMm))    }, [canvasSettings.widthMm])
+  useEffect(() => { setHInput(String(canvasSettings.heightMm))   }, [canvasSettings.heightMm])
+  useEffect(() => { setDInput(String(canvasSettings.distanceMm)) }, [canvasSettings.distanceMm])
+
+  const commitW = () => {
+    const v = Math.max(100, parseInt(wInput) || canvasSettings.widthMm)
+    setWInput(String(v)); updateCanvasSettings({ widthMm: v })
+  }
+  const commitH = () => {
+    const v = Math.max(100, parseInt(hInput) || canvasSettings.heightMm)
+    setHInput(String(v)); updateCanvasSettings({ heightMm: v })
+  }
+  const commitD = () => {
+    const v = Math.max(100, parseInt(dInput) || canvasSettings.distanceMm)
+    setDInput(String(v)); updateCanvasSettings({ distanceMm: v }); send(`SET_OFFSET:${v}`)
+  }
+
+  const onKey = (commit: () => void) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') { commit(); (e.target as HTMLElement).blur() }
+  }
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const dpr = window.devicePixelRatio || 1
+    const W = canvas.width / dpr
+    const H = canvas.height / dpr
+    const { widthMm, heightMm } = canvasSettings
+    ctx.save()
+    ctx.scale(dpr, dpr)
+    const isDark = theme === 'dark'
+
+    const col = {
+      bg:           isDark ? '#1c1c1c' : '#f2f2f2',
+      gridMajor:    isDark ? '#292929' : '#c8c8c8',
+      gridMinor:    isDark ? '#222222' : '#e3e3e3',
+      label:        isDark ? '#484848' : '#929292',
+      border:       isDark ? '#484848' : '#c8c8c8',
+      hit:          isDark ? '#606060' : '#929292',
+      crosshair:    '#d71921',
+      crosshairDim: isDark ? '#d7192150' : '#d7192140',
+    }
+
+    // Data area sits inside margins: left=ML, top=0, right=W, bottom=H-MB
+    const dW = W - ML
+    const dH = H - MB
+
+    // Map mm coords → data-area canvas coords
+    const toX = (xMm: number) => ML + (xMm / widthMm)  * dW
+    const toY = (yMm: number) => (1 - yMm / heightMm) * dH
+
+    ctx.fillStyle = col.bg
+    ctx.fillRect(0, 0, W, H)
+
+    // Grid lines (clipped to data area)
+    ctx.save()
+    ctx.beginPath(); ctx.rect(ML, 0, dW, dH); ctx.clip()
+    for (let i = 0; i <= GRID_DIVS; i++) {
+      const nx = ML + (i / GRID_DIVS) * dW
+      const ny =      (i / GRID_DIVS) * dH
+      ctx.strokeStyle = i % 3 === 0 ? col.gridMajor : col.gridMinor
+      ctx.lineWidth   = i % 3 === 0 ? 0.8 : 0.5
+      ctx.beginPath(); ctx.moveTo(nx, 0);  ctx.lineTo(nx, dH); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(ML, ny); ctx.lineTo(W, ny);  ctx.stroke()
+    }
+    ctx.restore()
+
+    // X-axis labels — below the data area
+    ctx.fillStyle = col.label
+    ctx.font = '9px monospace'
+    ctx.textAlign = 'center'
+    for (let i = 0; i <= GRID_DIVS; i++) {
+      ctx.fillText(
+        String(Math.round((i / GRID_DIVS) * widthMm)),
+        ML + (i / GRID_DIVS) * dW,
+        H - 3,
+      )
+    }
+
+    // Y-axis labels — left of the data area
+    ctx.textAlign = 'right'
+    for (let i = 0; i <= GRID_DIVS; i++) {
+      ctx.fillText(
+        String(Math.round((i / GRID_DIVS) * heightMm)),
+        ML - 4,
+        (1 - i / GRID_DIVS) * dH + 3,
+      )
+    }
+
+    // Hits
+    hits.forEach(hit => {
+      const px = toX(hit.x)
+      const py = toY(hit.y)
+      ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI * 2)
+      ctx.fillStyle = col.hit + '99'; ctx.fill()
+      ctx.strokeStyle = col.hit; ctx.lineWidth = 1; ctx.stroke()
+    })
+
+    // Target crosshair
+    if (target) {
+      const px = toX(target.x)
+      const py = toY(target.y)
+
+      ctx.beginPath(); ctx.arc(px, py, 16, 0, Math.PI * 2)
+      ctx.strokeStyle = col.crosshairDim; ctx.lineWidth = 1; ctx.stroke()
+
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2)
+      ctx.strokeStyle = col.crosshair; ctx.lineWidth = 1.5; ctx.stroke()
+
+      ctx.strokeStyle = col.crosshair; ctx.lineWidth = 1.5
+      ctx.beginPath(); ctx.moveTo(px - 20, py); ctx.lineTo(px - 7, py); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(px + 7,  py); ctx.lineTo(px + 20, py); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(px, py - 20); ctx.lineTo(px, py - 7); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(px, py + 7);  ctx.lineTo(px, py + 20); ctx.stroke()
+
+      ctx.fillStyle = col.crosshair
+      ctx.font = '9px monospace'
+      ctx.textAlign = 'left'
+      ctx.fillText(`${Math.round(target.x)}, ${Math.round(target.y)}`, px + 8, py - 8)
+    }
+
+    // Border around data area only
+    ctx.strokeStyle = col.border; ctx.lineWidth = 1
+    ctx.strokeRect(ML + 0.5, 0.5, dW - 1, dH - 1)
+    ctx.restore()
+  }, [target, hits, canvasSettings, theme])
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const obs = new ResizeObserver(() => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const { width: cW, height: cH } = container.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
+      const ratio = canvasSettings.widthMm / canvasSettings.heightMm
+
+      // Fit the *data area* (inside margins + p-3 padding = 24px each axis) to the aspect ratio
+      let dataW = cW - 24 - ML
+      let dataH = dataW / ratio
+      if (dataH > cH - 24 - MB) {
+        dataH = cH - 24 - MB
+        dataW = dataH * ratio
+      }
+
+      const cssW = dataW + ML
+      const cssH = dataH + MB
+
+      canvas.width  = Math.round(cssW * dpr)
+      canvas.height = Math.round(cssH * dpr)
+      canvas.style.width  = `${Math.round(cssW)}px`
+      canvas.style.height = `${Math.round(cssH)}px`
+      draw()
+    })
+    obs.observe(container)
+    return () => obs.disconnect()
+  }, [draw, canvasSettings.widthMm, canvasSettings.heightMm])
+
+  useEffect(() => { draw() }, [draw])
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const dataW = rect.width  - ML
+    const dataH = rect.height - MB
+    const px = Math.max(0, Math.min(dataW, e.clientX - rect.left - ML))
+    const py = Math.max(0, Math.min(dataH, e.clientY - rect.top))
+    setTarget({
+      x: Math.round((px / dataW) * canvasSettings.widthMm),
+      y: Math.round((1 - py / dataH) * canvasSettings.heightMm),
+    })
+  }, [canvasSettings, setTarget])
+
+  const aim = () => { if (target) send(`AIM:${target.x},${target.y}`) }
+  const aimFire = () => {
+    if (!target) return
+    send(`AIM_FIRE:${target.x},${target.y}`)
+    addHit(target.x, target.y)
+  }
+
+  const inputCls = 'w-14 bg-transparent border border-border-default rounded-full px-1.5 py-0.5 text-caption font-mono text-text-primary text-center focus:outline-none focus:border-border-darker transition-colors'
+
+  return (
+    <div className="rounded-[24px] bg-surface-on-primary p-2 flex flex-col">
+      {/* Settings */}
+      <div className="bg-surface-primary rounded-2xl p-3 shrink-0 mb-[-1px]">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-caption text-text-tertiary tracking-widest uppercase">Target Grid</span>
+          <span className="text-caption text-text-tertiary">{hits.length} hits</span>
+        </div>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-caption text-text-tertiary">W</span>
+          <input className={inputCls} type="number" value={wInput} onChange={e => setWInput(e.target.value)} onBlur={commitW} onKeyDown={onKey(commitW)} min={100} />
+          <span className="text-caption text-text-tertiary">×</span>
+          <span className="text-caption text-text-tertiary">H</span>
+          <input className={inputCls} type="number" value={hInput} onChange={e => setHInput(e.target.value)} onBlur={commitH} onKeyDown={onKey(commitH)} min={100} />
+          <span className="text-caption text-text-tertiary">mm</span>
+          <span className="text-caption text-text-tertiary ml-1">D</span>
+          <input className={inputCls} type="number" value={dInput} onChange={e => setDInput(e.target.value)} onBlur={commitD} onKeyDown={onKey(commitD)} min={100} />
+          <span className="text-caption text-text-tertiary">mm</span>
+        </div>
+      </div>
+
+      <Stitching />
+
+      {/* Canvas */}
+      <div
+        ref={containerRef}
+        className="bg-surface-primary rounded-2xl mb-[-1px] flex items-center justify-center p-3 w-full"
+        style={{ aspectRatio: `${canvasSettings.widthMm} / ${canvasSettings.heightMm}` }}
+      >
+        <canvas ref={canvasRef} onClick={handleClick} style={{ cursor: 'crosshair' }} />
+      </div>
+
+      <Stitching />
+
+      {/* Controls */}
+      <div className="bg-surface-primary rounded-2xl p-3 shrink-0">
+        <div className="text-caption font-mono text-text-tertiary mb-2">
+          {target ? (
+            <>
+              <span className="text-text-primary">{target.x}, {target.y} mm</span>
+              {' — '}
+              X={canvasXToSteps(target.x, canvasSettings.widthMm, canvasSettings.distanceMm)} Y={canvasYToSteps(target.y, canvasSettings.distanceMm)} steps
+            </>
+          ) : (
+            'click grid to aim'
+          )}
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            className="flex-1 px-2 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            disabled={!connected || !target}
+            onClick={aim}
+          >
+            Aim
+          </button>
+          <button
+            className="flex-1 px-2 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-1000 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            disabled={!connected || !target}
+            onClick={aimFire}
+          >
+            Aim + Fire
+          </button>
+          <button
+            className="px-2 py-1.5 rounded-full text-caption font-medium text-text-tertiary hover:text-text-primary hover:bg-surface-tertiary transition-colors cursor-pointer"
+            onClick={clearHits}
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
