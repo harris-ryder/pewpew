@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { useGunStore } from '../store/gunStore'
 
 export function SerialLog() {
@@ -22,7 +23,7 @@ export function SerialLog() {
       >
         <span className="text-caption text-text-tertiary uppercase tracking-widest shrink-0">Serial</span>
         <span className="flex-1 text-caption font-mono text-text-tertiary truncate">{last}</span>
-        <span className="text-caption text-text-tertiary shrink-0">{open ? '▼' : '▲'}</span>
+        {open ? <ChevronDown size={14} className="text-text-tertiary shrink-0" /> : <ChevronUp size={14} className="text-text-tertiary shrink-0" />}
       </div>
 
       {open && (

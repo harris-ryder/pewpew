@@ -6,13 +6,14 @@ import { Stitching } from './Stitching'
 
 const GRID_DIVS = 9
 const ML = 30   // left margin — Y-axis labels
+const MT = 10   // top margin — room for top Y-axis label
 const MB = 14   // bottom margin — X-axis labels
 
 export function TargetGrid() {
   const canvasRef    = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const { target, hits, canvasSettings, connected, addHit, clearHits, setTarget, updateCanvasSettings, theme } = useGunStore()
+  const { target, hits, canvasSettings, connected, addHit, clearHits, setTarget, setCommandedTarget, updateCanvasSettings, theme } = useGunStore()
   const { send } = useSerial()
 
   const [wInput, setWInput] = useState(String(canvasSettings.widthMm))
@@ -65,27 +66,27 @@ export function TargetGrid() {
       crosshairDim: isDark ? '#d7192150' : '#d7192140',
     }
 
-    // Data area sits inside margins: left=ML, top=0, right=W, bottom=H-MB
+    // Data area sits inside margins: left=ML, top=MT, right=W, bottom=H-MB
     const dW = W - ML
-    const dH = H - MB
+    const dH = H - MT - MB
 
     // Map mm coords → data-area canvas coords
     const toX = (xMm: number) => ML + (xMm / widthMm)  * dW
-    const toY = (yMm: number) => (1 - yMm / heightMm) * dH
+    const toY = (yMm: number) => MT + (1 - yMm / heightMm) * dH
 
     ctx.fillStyle = col.bg
     ctx.fillRect(0, 0, W, H)
 
     // Grid lines (clipped to data area)
     ctx.save()
-    ctx.beginPath(); ctx.rect(ML, 0, dW, dH); ctx.clip()
+    ctx.beginPath(); ctx.rect(ML, MT, dW, dH); ctx.clip()
     for (let i = 0; i <= GRID_DIVS; i++) {
       const nx = ML + (i / GRID_DIVS) * dW
-      const ny =      (i / GRID_DIVS) * dH
+      const ny = MT +  (i / GRID_DIVS) * dH
       ctx.strokeStyle = i % 3 === 0 ? col.gridMajor : col.gridMinor
       ctx.lineWidth   = i % 3 === 0 ? 0.8 : 0.5
-      ctx.beginPath(); ctx.moveTo(nx, 0);  ctx.lineTo(nx, dH); ctx.stroke()
-      ctx.beginPath(); ctx.moveTo(ML, ny); ctx.lineTo(W, ny);  ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(nx, MT);  ctx.lineTo(nx, MT + dH); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(ML, ny);  ctx.lineTo(W, ny);       ctx.stroke()
     }
     ctx.restore()
 
@@ -107,7 +108,7 @@ export function TargetGrid() {
       ctx.fillText(
         String(Math.round((i / GRID_DIVS) * heightMm)),
         ML - 4,
-        (1 - i / GRID_DIVS) * dH + 3,
+        MT + (1 - i / GRID_DIVS) * dH + 3,
       )
     }
 
@@ -145,7 +146,7 @@ export function TargetGrid() {
 
     // Border around data area only
     ctx.strokeStyle = col.border; ctx.lineWidth = 1
-    ctx.strokeRect(ML + 0.5, 0.5, dW - 1, dH - 1)
+    ctx.strokeRect(ML + 0.5, MT + 0.5, dW - 1, dH - 1)
     ctx.restore()
   }, [target, hits, canvasSettings, theme])
 
@@ -162,13 +163,13 @@ export function TargetGrid() {
       // Fit the *data area* (inside margins + p-3 padding = 24px each axis) to the aspect ratio
       let dataW = cW - 24 - ML
       let dataH = dataW / ratio
-      if (dataH > cH - 24 - MB) {
-        dataH = cH - 24 - MB
+      if (dataH > cH - 24 - MT - MB) {
+        dataH = cH - 24 - MT - MB
         dataW = dataH * ratio
       }
 
       const cssW = dataW + ML
-      const cssH = dataH + MB
+      const cssH = dataH + MT + MB
 
       canvas.width  = Math.round(cssW * dpr)
       canvas.height = Math.round(cssH * dpr)
@@ -196,33 +197,42 @@ export function TargetGrid() {
     })
   }, [canvasSettings, setTarget])
 
-  const aim = () => { if (target) send(`AIM:${target.x},${target.y}`) }
+  const aim = () => {
+    if (!target) return
+    send(`AIM:${target.x},${target.y}`)
+    setCommandedTarget(target)
+  }
   const aimFire = () => {
     if (!target) return
     send(`AIM_FIRE:${target.x},${target.y}`)
+    setCommandedTarget(target)
     addHit(target.x, target.y)
   }
 
   const inputCls = 'w-14 bg-transparent border border-border-default rounded-full px-1.5 py-0.5 text-caption font-mono text-text-primary text-center focus:outline-none focus:border-border-darker transition-colors'
 
   return (
-    <div className="rounded-[24px] bg-surface-on-primary p-2 flex flex-col">
+    <div className="rounded-[24px] bg-surface-on-primary p-3 flex flex-col">
       {/* Settings */}
-      <div className="bg-surface-primary rounded-2xl p-3 shrink-0 mb-[-1px]">
-        <div className="flex items-center justify-between mb-2">
+      <div className="bg-surface-primary rounded-2xl p-4 shrink-0 mb-[-1px]">
+        <div className="flex items-center justify-between mb-4">
           <span className="text-caption text-text-tertiary tracking-widest uppercase">Target Grid</span>
           <span className="text-caption text-text-tertiary">{hits.length} hits</span>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-caption text-text-tertiary">W</span>
-          <input className={inputCls} type="number" value={wInput} onChange={e => setWInput(e.target.value)} onBlur={commitW} onKeyDown={onKey(commitW)} min={100} />
-          <span className="text-caption text-text-tertiary">×</span>
-          <span className="text-caption text-text-tertiary">H</span>
-          <input className={inputCls} type="number" value={hInput} onChange={e => setHInput(e.target.value)} onBlur={commitH} onKeyDown={onKey(commitH)} min={100} />
-          <span className="text-caption text-text-tertiary">mm</span>
-          <span className="text-caption text-text-tertiary ml-1">D</span>
-          <input className={inputCls} type="number" value={dInput} onChange={e => setDInput(e.target.value)} onBlur={commitD} onKeyDown={onKey(commitD)} min={100} />
-          <span className="text-caption text-text-tertiary">mm</span>
+        <div className="flex flex-col gap-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="text-caption text-text-tertiary">W</span>
+            <input className={inputCls} type="number" value={wInput} onChange={e => setWInput(e.target.value)} onBlur={commitW} onKeyDown={onKey(commitW)} min={100} />
+            <span className="text-caption text-text-tertiary">×</span>
+            <span className="text-caption text-text-tertiary">H</span>
+            <input className={inputCls} type="number" value={hInput} onChange={e => setHInput(e.target.value)} onBlur={commitH} onKeyDown={onKey(commitH)} min={100} />
+            <span className="text-caption text-text-tertiary">mm</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-caption text-text-tertiary">D</span>
+            <input className={inputCls} type="number" value={dInput} onChange={e => setDInput(e.target.value)} onBlur={commitD} onKeyDown={onKey(commitD)} min={100} />
+            <span className="text-caption text-text-tertiary">mm</span>
+          </div>
         </div>
       </div>
 
@@ -240,8 +250,8 @@ export function TargetGrid() {
       <Stitching />
 
       {/* Controls */}
-      <div className="bg-surface-primary rounded-2xl p-3 shrink-0">
-        <div className="text-caption font-mono text-text-tertiary mb-2">
+      <div className="bg-surface-primary rounded-2xl p-4 shrink-0">
+        <div className="text-caption font-mono text-text-tertiary mb-4">
           {target ? (
             <>
               <span className="text-text-primary">{target.x}, {target.y} mm</span>

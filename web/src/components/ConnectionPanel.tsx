@@ -6,8 +6,8 @@ export function ConnectionPanel() {
   const { connect, disconnect } = useSerial()
 
   return (
-    <div className="bg-surface-primary rounded-2xl p-3 mb-[-1px]">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-surface-primary rounded-2xl p-4 mb-[-1px]">
+      <div className="flex items-center justify-between mb-4">
         <span className="text-caption text-text-tertiary tracking-widest uppercase">Connection</span>
         <span className={`w-1.5 h-1.5 rounded-full transition-colors ${connected ? 'bg-brand-green' : 'bg-neutral-300'}`} />
       </div>
@@ -18,7 +18,7 @@ export function ConnectionPanel() {
         </p>
       )}
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-4">
         <span className={`text-caption font-medium transition-colors ${connected ? 'text-text-primary' : 'text-text-tertiary'}`}>
           {connected ? 'Connected' : 'Disconnected'}
         </span>

@@ -14,9 +14,6 @@ const GUN_HEIGHT = 0.3
 
 type AimRef = React.MutableRefObject<{ pan: number; tilt: number }>
 
-// Pre-allocated to avoid per-frame GC
-const _v  = new THREE.Vector3()
-const _eu = new THREE.Euler()
 
 // ─── Angle helpers ───────────────────────────────────────────────────────────
 //
@@ -35,10 +32,11 @@ function anglesFromSteps(xs: number, ys: number) {
 }
 
 // ─── Gun model ───────────────────────────────────────────────────────────────
-function GunModel({ targetPan, targetTilt, aimRef }: {
+function GunModel({ targetPan, targetTilt, aimRef, ghost = false }: {
   targetPan: number
   targetTilt: number
   aimRef: AimRef
+  ghost?: boolean
 }) {
   const panRef  = useRef<THREE.Group>(null)
   const tiltRef = useRef<THREE.Group>(null)
@@ -51,48 +49,55 @@ function GunModel({ targetPan, targetTilt, aimRef }: {
     if (tiltRef.current) tiltRef.current.rotation.x = aimRef.current.tilt
   })
 
+  // Ghost: uniformly grayed + transparent. Real: normal colors.
+  const mat = ghost
+    ? (color: string) => <meshStandardMaterial color={color} opacity={0.07} transparent depthWrite={false} />
+    : (color: string) => <meshStandardMaterial color={color} />
+
+  const gc = '#606060' // ghost color — everything the same muted gray
+
   return (
     <group position={[0, GUN_HEIGHT, 0]}>
       {/* Base plate */}
       <mesh position={[0, -GUN_HEIGHT + 0.025, 0]}>
         <boxGeometry args={[0.6, 0.05, 0.6]} />
-        <meshStandardMaterial color="#c8c8c8" />
+        {mat(ghost ? gc : '#c8c8c8')}
       </mesh>
       {/* Center column */}
       <mesh position={[0, -GUN_HEIGHT + 0.09, 0]}>
         <cylinderGeometry args={[0.07, 0.09, 0.1, 12]} />
-        <meshStandardMaterial color="#b8b8b8" />
+        {mat(ghost ? gc : '#b8b8b8')}
       </mesh>
 
       {/* Pan group — X motor */}
       <group ref={panRef}>
         <mesh>
           <boxGeometry args={[0.28, 0.18, 0.38]} />
-          <meshStandardMaterial color="#e0e0e0" />
+          {mat(ghost ? gc : '#e0e0e0')}
         </mesh>
         <mesh position={[ 0.16, 0, 0.05]}>
           <boxGeometry args={[0.04, 0.22, 0.22]} />
-          <meshStandardMaterial color="#d0d0d0" />
+          {mat(ghost ? gc : '#d0d0d0')}
         </mesh>
         <mesh position={[-0.16, 0, 0.05]}>
           <boxGeometry args={[0.04, 0.22, 0.22]} />
-          <meshStandardMaterial color="#d0d0d0" />
+          {mat(ghost ? gc : '#d0d0d0')}
         </mesh>
 
         {/* Tilt group — Y motor */}
         <group ref={tiltRef} position={[0, 0.02, 0.04]}>
           <mesh>
             <boxGeometry args={[0.1, 0.1, 0.5]} />
-            <meshStandardMaterial color="#f0f0f0" />
+            {mat(ghost ? gc : '#f0f0f0')}
           </mesh>
           <mesh position={[0, 0, -0.7]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.025, 0.03, 0.9, 10]} />
-            <meshStandardMaterial color="#d8d8d8" />
+            {mat(ghost ? gc : '#d8d8d8')}
           </mesh>
           {/* Muzzle */}
           <mesh position={[0, 0, -1.16]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.04, 0.025, 0.04, 8]} />
-            <meshStandardMaterial color="#ffffff" />
+            {mat(ghost ? gc : '#ffffff')}
           </mesh>
         </group>
       </group>
@@ -218,20 +223,11 @@ function AimLine({ aimRef }: { aimRef: AimRef }) {
     const { distanceMm } = useGunStore.getState().canvasSettings
     const distM = distanceMm / 1000
 
-    _v.set(0, 0, -1)
-    _eu.set(tilt, pan, 0, 'YXZ')
-    _v.applyEuler(_eu)
-
-    const ox = 0, oy = GUN_HEIGHT, oz = 0
     const pos = line.geometry.attributes.position as THREE.BufferAttribute
-    pos.setXYZ(0, ox, oy, oz)
-
-    if (Math.abs(_v.z) > 0.001) {
-      const t = (-distM - oz) / _v.z
-      pos.setXYZ(1, ox + _v.x * t, oy + _v.y * t, oz + _v.z * t)
-    } else {
-      pos.setXYZ(1, _v.x * 5, oy + _v.y * 5, _v.z * 5)
-    }
+    pos.setXYZ(0, 0, GUN_HEIGHT, 0)
+    // Mirror the 2D projection used by canvasXToSteps/canvasYToSteps so the
+    // line endpoint always lands exactly on the target dot.
+    pos.setXYZ(1, -Math.tan(pan) * distM, GUN_HEIGHT + Math.tan(tilt) * distM, -distM)
     pos.needsUpdate = true
     line.computeLineDistances()
   })
@@ -260,21 +256,32 @@ function TransparentBackground() {
 
 // ─── Scene ───────────────────────────────────────────────────────────────────
 function Scene() {
-  const { posX, posY, theme, target, canvasSettings } = useGunStore()
+  const { posX, posY, theme, target, commandedTarget, canvasSettings } = useGunStore()
   const c = COLORS[theme]
 
-  // Derive aim angles: from clicked target when one is set, else from motor steps.
-  let targetPan: number, targetTilt: number
+  // Ghost gun: tracks canvas click (target)
+  let ghostPan: number, ghostTilt: number
   if (target) {
     const xs = canvasXToSteps(target.x, canvasSettings.widthMm, canvasSettings.distanceMm)
     const ys = canvasYToSteps(target.y, canvasSettings.distanceMm)
-    ;({ pan: targetPan, tilt: targetTilt } = anglesFromSteps(xs, ys))
+    ;({ pan: ghostPan, tilt: ghostTilt } = anglesFromSteps(xs, ys))
   } else {
-    ;({ pan: targetPan, tilt: targetTilt } = anglesFromSteps(posX, posY))
+    ;({ pan: ghostPan, tilt: ghostTilt } = anglesFromSteps(posX, posY))
   }
 
-  // Shared lerped state: GunModel writes it, AimLine reads it.
-  const aimRef = useRef({ pan: targetPan, tilt: targetTilt })
+  // Real gun: tracks commandedTarget (aim/fire button click), falls back to motor steps
+  let realPan: number, realTilt: number
+  if (commandedTarget) {
+    const xs = canvasXToSteps(commandedTarget.x, canvasSettings.widthMm, canvasSettings.distanceMm)
+    const ys = canvasYToSteps(commandedTarget.y, canvasSettings.distanceMm)
+    ;({ pan: realPan, tilt: realTilt } = anglesFromSteps(xs, ys))
+  } else {
+    ;({ pan: realPan, tilt: realTilt } = anglesFromSteps(posX, posY))
+  }
+
+  // Each gun writes to its own lerped ref; AimLine reads the ghost ref
+  const ghostAimRef = useRef({ pan: ghostPan, tilt: ghostTilt })
+  const realAimRef  = useRef({ pan: realPan,  tilt: realTilt  })
 
   return (
     <>
@@ -283,9 +290,14 @@ function Scene() {
       <directionalLight position={[3, 5, 4]} intensity={theme === 'light' ? 1.2 : 0.9} />
       <pointLight position={[0, GUN_HEIGHT, -0.5]} intensity={0.4} color="#0088ff" />
 
-      <GunModel targetPan={targetPan} targetTilt={targetTilt} aimRef={aimRef} />
+      {/* Ghost gun — shows where aim will go on next Aim click */}
+      <GunModel targetPan={ghostPan} targetTilt={ghostTilt} aimRef={ghostAimRef} ghost />
+      {/* Real gun — only moves after Aim / Aim+Fire */}
+      <GunModel targetPan={realPan}  targetTilt={realTilt}  aimRef={realAimRef} />
+
       <CanvasPlane />
-      <AimLine aimRef={aimRef} />
+      {/* Dashed aim line follows the ghost so it previews the shot */}
+      <AimLine aimRef={ghostAimRef} />
 
       <lineSegments>
         <bufferGeometry>
@@ -307,7 +319,7 @@ function Scene() {
 // ─── Export ──────────────────────────────────────────────────────────────────
 export function GunVisualization() {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: -10, pointerEvents: 'none', width: '100vw', height: '100vh', backgroundColor: 'var(--surface-primary)' }}>
+    <div style={{ width: '100%', height: '100%', backgroundColor: 'var(--surface-primary)' }}>
       <Canvas
         style={{ width: '100%', height: '100%' }}
         camera={{ position: [2.5, 2.5, 4], fov: 50, near: 0.01, far: 50 }}

@@ -13,8 +13,11 @@ interface GunStore {
   posT: number
   limitSwitch: boolean
 
-  // Target
+  // Target (canvas click → ghost gun)
   target: TargetPoint | null
+
+  // Commanded target (aim/fire click → real gun)
+  commandedTarget: TargetPoint | null
 
   // Hit history
   hits: Hit[]
@@ -37,6 +40,7 @@ interface GunStore {
   setPosition: (x: number, y: number, t: number) => void
   setLimitSwitch: (v: boolean) => void
   setTarget: (t: TargetPoint | null) => void
+  setCommandedTarget: (t: TargetPoint | null) => void
   addHit: (x: number, y: number) => void
   clearHits: () => void
   addLog: (msg: string) => void
@@ -88,6 +92,7 @@ export const useGunStore = create<GunStore>()(
       posT: 0,
       limitSwitch: false,
       target: null,
+      commandedTarget: null,
       hits: [],
       calMode: 'none',
       theme: 'dark',
@@ -102,6 +107,7 @@ export const useGunStore = create<GunStore>()(
       setLimitSwitch: (v) => set({ limitSwitch: v }),
 
       setTarget: (t) => set({ target: t }),
+      setCommandedTarget: (t) => set({ commandedTarget: t }),
 
       addHit: (x, y) =>
         set((s) => ({

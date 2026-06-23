@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowUp, ArrowDown, ArrowLeft, ArrowRight, X, Crosshair, Home } from 'lucide-react'
 import { useGunStore } from '../store/gunStore'
 import { useSerial } from '../hooks/useSerial'
 
@@ -6,8 +7,9 @@ type Tab = 'y' | 'x' | 'trigger'
 
 const JOG_SIZES = [1, 10, 50, 100] as const
 
-const btnJog = 'flex-1 px-2 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
-const btnGhost = 'flex-1 px-2 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
+const btnJog = 'flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
+const btnGhost = 'flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
+const btnStop = 'flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-caption font-medium border border-border-darker text-text-primary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer'
 
 export function CalibrationPanel() {
   const [tab, setTab] = useState<Tab>('y')
@@ -20,14 +22,14 @@ export function CalibrationPanel() {
   const dis = !connected
 
   return (
-    <div className="bg-surface-primary rounded-2xl p-3 mb-[-1px]">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-surface-primary rounded-2xl p-4 mb-[-1px]">
+      <div className="flex items-center justify-between mb-4">
         <span className="text-caption text-text-tertiary tracking-widest uppercase">Calibration</span>
         <span className={`w-1.5 h-1.5 rounded-full transition-colors ${connected && calibration.yHomed && calibration.xCalibrated && calibration.triggerCalibrated ? 'bg-brand-green' : 'bg-neutral-300'}`} />
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-3">
+      <div className="flex gap-1 mb-4">
         {(['y', 'x', 'trigger'] as Tab[]).map((t) => {
           const done = t === 'y' ? calibration.yHomed : t === 'x' ? calibration.xCalibrated : calibration.triggerCalibrated
           return (
@@ -49,7 +51,7 @@ export function CalibrationPanel() {
 
       {/* Y tab */}
       {tab === 'y' && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-caption text-text-tertiary leading-relaxed">
             Homes to limit switch, then applies saved offset to reach horizontal.
           </p>
@@ -64,10 +66,11 @@ export function CalibrationPanel() {
             <span className="text-caption font-mono text-text-primary">{posY} steps</span>
           </div>
           <button
-            className="w-full px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-900 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-900 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             disabled={dis}
             onClick={() => send('HOME_Y')}
           >
+            <Home size={13} />
             Home Y Axis
           </button>
 
@@ -90,15 +93,15 @@ export function CalibrationPanel() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <button className={btnJog} disabled={dis} onClick={() => send(`JOG_Y:+${yJogSize}`)}>↓ Down</button>
-                <button
-                  className="px-3 py-1.5 rounded-full text-caption font-medium border border-border-darker text-text-primary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  disabled={dis}
-                  onClick={() => send('STOP')}
-                >
-                  STOP
+                <button className={btnJog} disabled={dis} onClick={() => send(`JOG_Y:+${yJogSize}`)}>
+                  <ArrowDown size={13} /> Down
                 </button>
-                <button className={btnJog} disabled={dis} onClick={() => send(`JOG_Y:-${yJogSize}`)}>↑ Up</button>
+                <button className={btnStop} disabled={dis} onClick={() => send('STOP')}>
+                  <X size={13} />
+                </button>
+                <button className={btnJog} disabled={dis} onClick={() => send(`JOG_Y:-${yJogSize}`)}>
+                  <ArrowUp size={13} /> Up
+                </button>
               </div>
               <button
                 className="w-full px-3 py-1.5 rounded-full text-caption font-medium border border-border-default text-text-secondary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
@@ -114,7 +117,7 @@ export function CalibrationPanel() {
 
       {/* X tab */}
       {tab === 'x' && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-caption text-text-tertiary leading-relaxed">
             Jog to physical center, set zero. Then jog to each limit and save.
           </p>
@@ -154,15 +157,15 @@ export function CalibrationPanel() {
           </div>
 
           <div className="flex gap-1">
-            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_X:-${jogSize}`)}>← L</button>
-            <button
-              className="px-3 py-1.5 rounded-full text-caption font-medium border border-border-darker text-text-primary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              disabled={dis}
-              onClick={() => send('STOP')}
-            >
-              STOP
+            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_X:-${jogSize}`)}>
+              <ArrowLeft size={13} /> L
             </button>
-            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_X:+${jogSize}`)}>R →</button>
+            <button className={btnStop} disabled={dis} onClick={() => send('STOP')}>
+              <X size={13} />
+            </button>
+            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_X:+${jogSize}`)}>
+              R <ArrowRight size={13} />
+            </button>
           </div>
 
           <button
@@ -175,10 +178,10 @@ export function CalibrationPanel() {
 
           <div className="flex gap-1">
             <button className={btnGhost} disabled={dis} onClick={() => { send('SET_XMIN'); updateCalibration({ xMin: posX }) }}>
-              ◄ Set Left Max
+              Set Left Max
             </button>
             <button className={btnGhost} disabled={dis} onClick={() => { send('SET_XMAX'); updateCalibration({ xMax: posX, xCalibrated: true }) }}>
-              Set Right Max ►
+              Set Right Max
             </button>
           </div>
           <div className="flex justify-between text-caption font-mono text-text-tertiary">
@@ -190,7 +193,7 @@ export function CalibrationPanel() {
 
       {/* Trigger tab */}
       {tab === 'trigger' && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-caption text-text-tertiary leading-relaxed">
             Trigger has <span className="text-text-secondary">no microswitch</span>. Jog to open position, save, then to fire position, save.
           </p>
@@ -217,23 +220,23 @@ export function CalibrationPanel() {
           </div>
 
           <div className="flex gap-1">
-            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_T:-${triggerJogSize}`)}>← Pull</button>
-            <button
-              className="px-3 py-1.5 rounded-full text-caption font-medium border border-border-darker text-text-primary hover:bg-surface-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-              disabled={dis}
-              onClick={() => send('STOP')}
-            >
-              STOP
+            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_T:-${triggerJogSize}`)}>
+              <ArrowLeft size={13} /> Pull
             </button>
-            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_T:+${triggerJogSize}`)}>Rel →</button>
+            <button className={btnStop} disabled={dis} onClick={() => send('STOP')}>
+              <X size={13} />
+            </button>
+            <button className={btnJog} disabled={dis} onClick={() => send(`JOG_T:+${triggerJogSize}`)}>
+              Rel <ArrowRight size={13} />
+            </button>
           </div>
 
           <div className="flex gap-1">
             <button className={btnGhost} disabled={dis} onClick={() => { send('SET_TRIG_OPEN'); updateCalibration({ triggerOpen: posT }) }}>
-              ◎ Set Open
+              Set Open
             </button>
             <button className={btnGhost} disabled={dis} onClick={() => { send('SET_TRIG_CLOSE'); updateCalibration({ triggerClose: posT, triggerCalibrated: true }) }}>
-              ● Set Fire
+              Set Fire
             </button>
           </div>
           <div className="flex justify-between text-caption font-mono text-text-tertiary">
@@ -242,11 +245,11 @@ export function CalibrationPanel() {
           </div>
 
           <button
-            className="w-full px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-1000 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-caption font-medium bg-brand-yellow text-neutral-1000 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             disabled={dis || !calibration.triggerCalibrated}
             onClick={() => send('FIRE')}
           >
-            Test Fire
+            <Crosshair size={13} /> Test Fire
           </button>
         </div>
       )}
