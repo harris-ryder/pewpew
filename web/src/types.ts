@@ -12,6 +12,7 @@ export interface CanvasSettings {
   widthMm: number
   heightMm: number
   distanceMm: number
+  tableHeightMm: number
 }
 
 export interface TargetPoint {

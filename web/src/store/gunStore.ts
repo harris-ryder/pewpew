@@ -50,7 +50,7 @@ interface GunStore {
   setCalMode: (m: GunStore['calMode']) => void
 }
 
-const DEFAULT_CANVAS = { widthMm: 1800, heightMm: 1800, distanceMm: 2300 }
+const DEFAULT_CANVAS = { widthMm: 1800, heightMm: 1800, distanceMm: 2300, tableHeightMm: 750 }
 const DEFAULT_CAL = { xMin: -5000, xMax: 5000, yHomed: false, xCalibrated: false, triggerOpen: 0, triggerClose: -700, triggerCalibrated: false }
 
 function sanitizeNum(v: unknown, fallback: number): number {
@@ -65,6 +65,7 @@ function sanitizeCanvas(s: unknown): typeof DEFAULT_CANVAS {
     widthMm: sanitizeNum(o.widthMm, DEFAULT_CANVAS.widthMm),
     heightMm: sanitizeNum(o.heightMm, DEFAULT_CANVAS.heightMm),
     distanceMm: sanitizeNum(o.distanceMm, DEFAULT_CANVAS.distanceMm),
+    tableHeightMm: sanitizeNum(o.tableHeightMm, DEFAULT_CANVAS.tableHeightMm),
   }
 }
 

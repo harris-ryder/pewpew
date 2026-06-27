@@ -19,10 +19,12 @@ export function TargetGrid() {
   const [wInput, setWInput] = useState(String(canvasSettings.widthMm))
   const [hInput, setHInput] = useState(String(canvasSettings.heightMm))
   const [dInput, setDInput] = useState(String(canvasSettings.distanceMm))
+  const [zInput, setZInput] = useState(String(canvasSettings.tableHeightMm))
 
-  useEffect(() => { setWInput(String(canvasSettings.widthMm))    }, [canvasSettings.widthMm])
-  useEffect(() => { setHInput(String(canvasSettings.heightMm))   }, [canvasSettings.heightMm])
-  useEffect(() => { setDInput(String(canvasSettings.distanceMm)) }, [canvasSettings.distanceMm])
+  useEffect(() => { setWInput(String(canvasSettings.widthMm))         }, [canvasSettings.widthMm])
+  useEffect(() => { setHInput(String(canvasSettings.heightMm))        }, [canvasSettings.heightMm])
+  useEffect(() => { setDInput(String(canvasSettings.distanceMm))      }, [canvasSettings.distanceMm])
+  useEffect(() => { setZInput(String(canvasSettings.tableHeightMm))   }, [canvasSettings.tableHeightMm])
 
   const commitW = () => {
     const v = Math.max(100, parseInt(wInput) || canvasSettings.widthMm)
@@ -35,6 +37,10 @@ export function TargetGrid() {
   const commitD = () => {
     const v = Math.max(100, parseInt(dInput) || canvasSettings.distanceMm)
     setDInput(String(v)); updateCanvasSettings({ distanceMm: v }); send(`SET_OFFSET:${v}`)
+  }
+  const commitZ = () => {
+    const v = Math.max(0, parseInt(zInput) || canvasSettings.tableHeightMm)
+    setZInput(String(v)); updateCanvasSettings({ tableHeightMm: v })
   }
 
   const onKey = (commit: () => void) => (e: React.KeyboardEvent) => {
@@ -231,6 +237,11 @@ export function TargetGrid() {
           <div className="flex items-center gap-1.5">
             <span className="text-caption text-text-tertiary">D</span>
             <input className={inputCls} type="number" value={dInput} onChange={e => setDInput(e.target.value)} onBlur={commitD} onKeyDown={onKey(commitD)} min={100} />
+            <span className="text-caption text-text-tertiary">mm</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-caption text-text-tertiary">Z</span>
+            <input className={inputCls} type="number" value={zInput} onChange={e => setZInput(e.target.value)} onBlur={commitZ} onKeyDown={onKey(commitZ)} min={0} />
             <span className="text-caption text-text-tertiary">mm</span>
           </div>
         </div>

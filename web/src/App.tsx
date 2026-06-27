@@ -55,7 +55,7 @@ export function App() {
         </header>
 
         <div className="flex-1 flex overflow-hidden min-h-0">
-          <aside className="pointer-events-auto w-72 shrink-0 flex flex-col p-2 overflow-y-auto">
+          <aside className="pointer-events-auto w-72 shrink-0 flex flex-col p-4 overflow-y-auto">
             <div className="flex flex-col rounded-[24px] hatch-bg p-3">
               <ConnectionPanel />
               <Stitching />
@@ -68,7 +68,7 @@ export function App() {
           {/* Empty center — no pointer-events, so drag reaches the canvas */}
           <div className="flex-1" />
 
-          <aside className="pointer-events-auto w-[500px] shrink-0 flex flex-col p-2 self-start">
+          <aside className="pointer-events-auto w-[500px] shrink-0 flex flex-col p-4 self-start">
             <TargetGrid />
           </aside>
         </div>

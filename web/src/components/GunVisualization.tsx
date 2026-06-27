@@ -32,11 +32,12 @@ function anglesFromSteps(xs: number, ys: number) {
 }
 
 // ─── Gun model ───────────────────────────────────────────────────────────────
-function GunModel({ targetPan, targetTilt, aimRef, ghost = false }: {
+function GunModel({ targetPan, targetTilt, aimRef, ghost = false, tableM = 0 }: {
   targetPan: number
   targetTilt: number
   aimRef: AimRef
   ghost?: boolean
+  tableM?: number
 }) {
   const panRef  = useRef<THREE.Group>(null)
   const tiltRef = useRef<THREE.Group>(null)
@@ -57,7 +58,7 @@ function GunModel({ targetPan, targetTilt, aimRef, ghost = false }: {
   const gc = '#606060' // ghost color — everything the same muted gray
 
   return (
-    <group position={[0, GUN_HEIGHT, 0]}>
+    <group position={[0, GUN_HEIGHT + tableM, 0]}>
       {/* Base plate */}
       <mesh position={[0, -GUN_HEIGHT + 0.025, 0]}>
         <boxGeometry args={[0.6, 0.05, 0.6]} />
@@ -116,9 +117,10 @@ function GunModel({ targetPan, targetTilt, aimRef, ghost = false }: {
 function CanvasPlane() {
   const { canvasSettings, target, hits, theme } = useGunStore()
   const c    = COLORS[theme]
-  const distM = canvasSettings.distanceMm / 1000
-  const wM    = canvasSettings.widthMm    / 1000
-  const hM    = canvasSettings.heightMm   / 1000
+  const distM   = canvasSettings.distanceMm   / 1000
+  const wM      = canvasSettings.widthMm      / 1000
+  const hM      = canvasSettings.heightMm     / 1000
+  const tableM  = canvasSettings.tableHeightMm / 1000
 
   // Grid lines with bottom-origin y (0 → hM)
   const gridGeo = useMemo(() => {
@@ -158,8 +160,8 @@ function CanvasPlane() {
   })
 
   return (
-    // Lifted so canvas bottom sits at world y = GUN_HEIGHT
-    <group position={[0, GUN_HEIGHT, 0]}>
+    // Lifted so canvas bottom sits at world y = GUN_HEIGHT + tableM
+    <group position={[0, GUN_HEIGHT + tableM, 0]}>
       {/* Semi-transparent face — centered at (0, hM/2, -distM) in local space */}
       <mesh position={[0, hM / 2, -distM]}>
         <planeGeometry args={[wM, hM]} />
@@ -220,14 +222,15 @@ function AimLine({ aimRef }: { aimRef: AimRef }) {
 
   useFrame(() => {
     const { pan, tilt } = aimRef.current
-    const { distanceMm } = useGunStore.getState().canvasSettings
-    const distM = distanceMm / 1000
+    const { distanceMm, tableHeightMm } = useGunStore.getState().canvasSettings
+    const distM  = distanceMm   / 1000
+    const tblM   = tableHeightMm / 1000
 
     const pos = line.geometry.attributes.position as THREE.BufferAttribute
-    pos.setXYZ(0, 0, GUN_HEIGHT, 0)
+    pos.setXYZ(0, 0, GUN_HEIGHT + tblM, 0)
     // Mirror the 2D projection used by canvasXToSteps/canvasYToSteps so the
     // line endpoint always lands exactly on the target dot.
-    pos.setXYZ(1, -Math.tan(pan) * distM, GUN_HEIGHT + Math.tan(tilt) * distM, -distM)
+    pos.setXYZ(1, -Math.tan(pan) * distM, GUN_HEIGHT + tblM + Math.tan(tilt) * distM, -distM)
     pos.needsUpdate = true
     line.computeLineDistances()
   })
@@ -258,6 +261,7 @@ function TransparentBackground() {
 function Scene() {
   const { posX, posY, theme, target, commandedTarget, canvasSettings } = useGunStore()
   const c = COLORS[theme]
+  const tableM = canvasSettings.tableHeightMm / 1000
 
   // Ghost gun: tracks canvas click (target)
   let ghostPan: number, ghostTilt: number
@@ -291,9 +295,9 @@ function Scene() {
       <pointLight position={[0, GUN_HEIGHT, -0.5]} intensity={0.4} />
 
       {/* Ghost gun — shows where aim will go on next Aim click */}
-      <GunModel targetPan={ghostPan} targetTilt={ghostTilt} aimRef={ghostAimRef} ghost />
+      <GunModel targetPan={ghostPan} targetTilt={ghostTilt} aimRef={ghostAimRef} ghost tableM={tableM} />
       {/* Real gun — only moves after Aim / Aim+Fire */}
-      <GunModel targetPan={realPan}  targetTilt={realTilt}  aimRef={realAimRef} />
+      <GunModel targetPan={realPan}  targetTilt={realTilt}  aimRef={realAimRef} tableM={tableM} />
 
       <CanvasPlane />
       {/* Dashed aim line follows the ghost so it previews the shot */}
@@ -307,7 +311,7 @@ function Scene() {
       </lineSegments>
 
       <OrbitControls
-        target={[0, GUN_HEIGHT + 0.6, -1.2]}
+        target={[0, GUN_HEIGHT + tableM + 0.6, -1.2]}
         minDistance={1}
         maxDistance={12}
         enablePan
