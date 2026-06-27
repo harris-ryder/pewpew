@@ -3,7 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { useGunStore } from '../store/gunStore'
-import { xStepsToDeg, yStepsToDeg, canvasXToSteps, canvasYToSteps } from '../utils/math'
+import { xStepsToDeg, yStepsToDeg, canvasXToSteps, canvasYToSteps, bilinearSteps } from '../utils/math'
+import type { Calibration, CanvasSettings, CornerSteps } from '../types'
 
 const COLORS = {
   dark:  { bg: '#1c1c1c', floor: '#1c1c1c', floorGrid: '#292929', canvasBorder: '#484848', canvasGrid: '#323232' },
@@ -257,31 +258,36 @@ function TransparentBackground() {
   return null
 }
 
+// ─── Step helper ─────────────────────────────────────────────────────────────
+function stepsForPoint(
+  pt: { x: number; y: number } | null,
+  fallbackSteps: { sx: number; sy: number },
+  canvasSettings: CanvasSettings,
+  corners: Calibration['corners']
+): { sx: number; sy: number } {
+  if (!pt) return fallbackSteps
+  if (corners.every(Boolean)) {
+    return bilinearSteps(pt.x, pt.y, canvasSettings.widthMm, canvasSettings.heightMm,
+      corners as [CornerSteps, CornerSteps, CornerSteps, CornerSteps])
+  }
+  return {
+    sx: canvasXToSteps(pt.x, canvasSettings.widthMm, canvasSettings.distanceMm),
+    sy: canvasYToSteps(pt.y, canvasSettings.distanceMm),
+  }
+}
+
 // ─── Scene ───────────────────────────────────────────────────────────────────
 function Scene() {
-  const { posX, posY, theme, target, commandedTarget, canvasSettings } = useGunStore()
+  const { posX, posY, theme, target, commandedTarget, canvasSettings, calibration } = useGunStore()
   const c = COLORS[theme]
   const tableM = canvasSettings.tableHeightMm / 1000
 
-  // Ghost gun: tracks canvas click (target)
-  let ghostPan: number, ghostTilt: number
-  if (target) {
-    const xs = canvasXToSteps(target.x, canvasSettings.widthMm, canvasSettings.distanceMm)
-    const ys = canvasYToSteps(target.y, canvasSettings.distanceMm)
-    ;({ pan: ghostPan, tilt: ghostTilt } = anglesFromSteps(xs, ys))
-  } else {
-    ;({ pan: ghostPan, tilt: ghostTilt } = anglesFromSteps(posX, posY))
-  }
+  const fallback = { sx: posX, sy: posY }
+  const ghostSteps = stepsForPoint(target, fallback, canvasSettings, calibration.corners)
+  const realSteps  = stepsForPoint(commandedTarget, fallback, canvasSettings, calibration.corners)
 
-  // Real gun: tracks commandedTarget (aim/fire button click), falls back to motor steps
-  let realPan: number, realTilt: number
-  if (commandedTarget) {
-    const xs = canvasXToSteps(commandedTarget.x, canvasSettings.widthMm, canvasSettings.distanceMm)
-    const ys = canvasYToSteps(commandedTarget.y, canvasSettings.distanceMm)
-    ;({ pan: realPan, tilt: realTilt } = anglesFromSteps(xs, ys))
-  } else {
-    ;({ pan: realPan, tilt: realTilt } = anglesFromSteps(posX, posY))
-  }
+  const { pan: ghostPan, tilt: ghostTilt } = anglesFromSteps(ghostSteps.sx, ghostSteps.sy)
+  const { pan: realPan,  tilt: realTilt  } = anglesFromSteps(realSteps.sx,  realSteps.sy)
 
   // Each gun writes to its own lerped ref; AimLine reads the ghost ref
   const ghostAimRef = useRef({ pan: ghostPan, tilt: ghostTilt })

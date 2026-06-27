@@ -11,6 +11,8 @@
  *   AIM:<xMm>,<yMm>     - move to canvas coordinates
  *   FIRE                 - fire using stored trigger positions
  *   AIM_FIRE:<x>,<y>    - aim then fire
+ *   AIM_STEPS:<sx>,<sy>    - move to pre-computed step positions
+ *   AIM_FIRE_STEPS:<sx>,<sy> - move to steps then fire
  *   SET_XMIN             - save current X as left limit
  *   SET_XMAX             - save current X as right limit
  *   SET_TRIG_OPEN        - save current trigger pos as open
@@ -162,6 +164,28 @@ void processCommand(const String& cmd) {
     stepperX.moveTo(calcXSteps(x));
     stepperY.moveTo(calcYSteps(y));
     // Wait for both axes, then fire
+    while (stepperX.distanceToGo() != 0 || stepperY.distanceToGo() != 0) {
+      stepperX.run();
+      stepperY.run();
+    }
+    fire();
+
+  } else if (cmd.startsWith("AIM_STEPS:")) {
+    int comma = cmd.indexOf(',', 10);
+    if (comma < 0) { Serial.println("ERR:bad AIM_STEPS format"); return; }
+    long sx = cmd.substring(10, comma).toInt();
+    long sy = cmd.substring(comma + 1).toInt();
+    stepperX.moveTo(sx);
+    stepperY.moveTo(sy);
+    Serial.println("ACK");
+
+  } else if (cmd.startsWith("AIM_FIRE_STEPS:")) {
+    int comma = cmd.indexOf(',', 15);
+    if (comma < 0) { Serial.println("ERR:bad AIM_FIRE_STEPS format"); return; }
+    long sx = cmd.substring(15, comma).toInt();
+    long sy = cmd.substring(comma + 1).toInt();
+    stepperX.moveTo(sx);
+    stepperY.moveTo(sy);
     while (stepperX.distanceToGo() != 0 || stepperY.distanceToGo() != 0) {
       stepperX.run();
       stepperY.run();

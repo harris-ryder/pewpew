@@ -1,11 +1,15 @@
+export interface CornerSteps {
+  sx: number  // X motor steps
+  sy: number  // Y motor steps
+}
+
 export interface Calibration {
-  xMin: number
-  xMax: number
-  yHomed: boolean
-  xCalibrated: boolean
   triggerOpen: number
   triggerClose: number
   triggerCalibrated: boolean
+  // [bottomLeft, bottomRight, topLeft, topRight] — null = not yet calibrated
+  corners: [CornerSteps | null, CornerSteps | null, CornerSteps | null, CornerSteps | null]
+  canvasCalibrated: boolean
 }
 
 export interface CanvasSettings {
@@ -27,9 +31,9 @@ export interface Hit {
 }
 
 export interface GunPosition {
-  x: number     // X motor steps (pan)
-  y: number     // Y motor steps (tilt)
-  trigger: number  // Trigger motor steps
+  x: number
+  y: number
+  trigger: number
 }
 
 // Web Serial API (not in stock TS lib)

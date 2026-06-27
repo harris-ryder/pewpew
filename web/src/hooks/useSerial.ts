@@ -26,11 +26,7 @@ function processLine(line: string) {
       st().setLimitSwitch(sw === 1)
     }
   } else if (trimmed === 'HOMED_Y') {
-    st().updateCalibration({ yHomed: true })
-  } else if (trimmed === 'X_CAL_DONE') {
-    st().updateCalibration({ xCalibrated: true })
-  } else if (trimmed === 'TRIG_CAL_DONE') {
-    st().updateCalibration({ triggerCalibrated: true })
+    st().setYHomed(true)
   }
 }
 

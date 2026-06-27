@@ -6,29 +6,29 @@ export function ConnectionPanel() {
   const { connect, disconnect } = useSerial()
 
   return (
-    <div className="relative z-10 bg-surface-primary rounded-2xl p-4 mb-[-1px] ring-1 ring-black">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-caption text-text-tertiary tracking-widest uppercase">Connection</span>
-        <span className={`w-1.5 h-1.5 rounded-full transition-colors ${connected ? 'bg-brand-green' : 'bg-neutral-300'}`} />
+    <div className="p-4 border-b border-surface-primary">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-caption tracking-[0.12em] uppercase opacity-50">Connection</span>
+        <span className={`text-caption ${connected ? 'text-text-primary' : 'opacity-50'}`}>
+          {connected ? 'Online' : 'Offline'}
+        </span>
       </div>
 
       {!SERIAL_SUPPORTED && (
-        <p className="text-caption text-text-secondary mb-2">
-          Web Serial not supported — use Chrome or Edge.
+        <p className="text-caption opacity-50 mb-3">
+          Use Chrome or Edge for Web Serial.
         </p>
       )}
 
-      <div className="flex items-center justify-between mb-4">
-        <span className={`text-caption font-medium transition-colors ${connected ? 'text-text-primary' : 'text-text-tertiary'}`}>
-          {connected ? 'Connected' : 'Disconnected'}
-        </span>
-        <span className="text-caption text-text-tertiary">9600 baud</span>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-caption opacity-50">USB Serial</span>
+        <span className="text-caption opacity-50">9600 baud</span>
       </div>
 
       <button
-        className={`w-full px-3 py-1.5 rounded-full text-caption font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
+        className={`w-full px-3 py-1.5 text-caption transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
           connected
-            ? 'border border-border-default text-text-secondary hover:bg-surface-tertiary'
+            ? 'border border-surface-primary text-text-secondary hover:bg-surface-primary'
             : 'bg-text-primary text-surface-primary hover:opacity-90'
         }`}
         onClick={connected ? disconnect : connect}

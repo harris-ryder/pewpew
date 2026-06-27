@@ -122,7 +122,7 @@ body {
   --color-border-lighter: var(--border-lighter);
   --color-border-darker: var(--border-darker);
 
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-mono: 'SF Mono', ui-monospace, monospace;
 
   --font-size-xxs: 0.625rem;
   --font-size-xs: 0.75rem;
@@ -154,6 +154,17 @@ input[type='number'] {
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
+}
+
+@keyframes jog-osd-fade {
+  0%   { opacity: 1; }
+  25%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.jog-osd {
+  animation: jog-osd-fade 650ms ease-out forwards;
+  pointer-events: none;
 }
 
 @layer components {
